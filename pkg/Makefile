@@ -12,6 +12,7 @@ ANNOTATOR=\
 	annotator.coffee \
 	widget.coffee \
 	editor.coffee \
+	symbol_list.coffee \
 	viewer.coffee \
 	notification.coffee
 

@@ -11,6 +11,7 @@ class Annotator extends Delegator
   # Events to be bound on Annotator#element.
   events:
     ".annotator-adder button click":     "onAdderClick"
+    ".annotator-adder button contextmenu": "onAdderRightClick"
     ".annotator-adder button mousedown": "onAdderMousedown"
     ".annotator-hl mouseover":           "onHighlightMouseover"
     ".annotator-hl mouseout":            "startViewerHideTimer"
@@ -23,6 +24,8 @@ class Annotator extends Delegator
     readOnly: false # Start Annotator in read-only mode. No controls will be shown.
 
   plugins: {}
+
+  symbolList: null
 
   editor: null
 
@@ -480,6 +483,10 @@ class Annotator extends Delegator
   #   annotator.showEditor({text: "my comment"}, {top: 34, left: 234})
   #
   # Returns itself to allow chaining.
+
+  showSymbolList: (location) =>
+
+
   showEditor: (annotation, location) =>
     @editor.element.css(location)
     @editor.load(annotation)
@@ -647,6 +654,9 @@ class Annotator extends Delegator
   # event - A mousedown Event object
   #
   # Returns nothing.
+  onAdderRightClick: ->
+    event?.preventDefault()
+
   onAdderClick: (event) =>
     event?.preventDefault()
 
