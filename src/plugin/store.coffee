@@ -140,6 +140,7 @@ class Annotator.Plugin.Store extends Annotator.Plugin
         if not data.id?
           console.warn Annotator._t("Warning: No ID returned from server for annotation "), annotation
         this.updateAnnotation annotation, data
+        @annotator.publish('store:annotationCreated', [annotation])
       )
     else
       # This is called to update annotations created at load time with
@@ -234,6 +235,8 @@ class Annotator.Plugin.Store extends Annotator.Plugin
     # Update the elements with our copies of the annotation objects (e.g.
     # with ids from the server).
     $(annotation.highlights).data('annotation', annotation)
+
+    $(annotation.highlights).attr('data-annotation-id', annotation.id)
 
   # Public: Makes a request to the server for all annotations.
   #
