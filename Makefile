@@ -3,7 +3,7 @@ REPORTER=spec
 default: all
 
 .DEFAULT:
-	cd pkg && $(MAKE) $@
+	cd ./pkg && $(MAKE) $@
 
 test: develop
 	./tools/test -R $(REPORTER)

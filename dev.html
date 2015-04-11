@@ -97,8 +97,20 @@
       var devAnnotator
       (function ($) {
         var elem = document.getElementById('airlock');
+        var options = {
+          presets: [
+            {
+              label: 'Preset 1',
+              value: 'The value of preset 1'
+            },
+            {
+              label: 'Another preset',
+              value: 'The value of preset 2'
+            },
+          ]
+        };
 
-        devAnnotator = new Annotator(elem)
+        devAnnotator = new Annotator(elem, options)
           .addPlugin('Auth', {
             tokenUrl: 'http://localhost:4000/api/token'
           })

@@ -10,13 +10,14 @@ _Annotator = this.Annotator
 class Annotator extends Delegator
   # Events to be bound on Annotator#element.
   events:
-    ".annotator-adder button click":     "onAdderClick"
+    ".annotator-adder button.annotator-adder-comment click": "onAdderCommentClick"
+    ".annotator-adder button.annotator-adder-preset click": "onAdderPresetClick"
     ".annotator-adder button mousedown": "onAdderMousedown"
-    ".annotator-hl mouseover":           "onHighlightMouseover"
-    ".annotator-hl mouseout":            "startViewerHideTimer"
+    ".annotator-hl mouseover": "onHighlightMouseover"
+    ".annotator-hl mouseout": "startViewerHideTimer"
 
   html:
-    adder:   '<div class="annotator-adder"><button>' + _t('Annotate') + '</button></div>'
+    adder:   '<div class="annotator-adder"><button class="annotator-adder-preset">Preset</button><button class="annotator-adder-comment">Comment</button></div>'
     wrapper: '<div class="annotator-wrapper"></div>'
 
   options: # Configuration options
@@ -59,9 +60,12 @@ class Annotator extends Delegator
   #     # Fallback for unsupported browsers.
   #
   # Returns a new instance of the Annotator.
-  constructor: (element, options) ->
+  constructor: (element, options={}) ->
     super
     @plugins = {}
+    @_setupPresets(options.presets || [])
+
+    this.subscribe 'annotationCreated', this.labelHighlight
 
     # Return early if the annotator is not supported.
     return this unless Annotator.supported()
@@ -72,7 +76,18 @@ class Annotator extends Delegator
     # Create adder
     this.adder = $(this.html.adder).appendTo(@wrapper).hide()
 
+    if @presets.length > 0
+      this._setupPresetSelector()
+    else
+      this.adder.find('.annotator-adder-preset').remove()
+
     Annotator._instances.push(this)
+
+  _setupPresets: (presets) ->
+    for preset in presets
+      preset.uuid = "preset-#{Annotator.Util.uuid()}"
+
+    @presets = presets
 
   # Wraps the children of @element in a @wrapper div. NOTE: This method will also
   # remove any script elements inside @element to prevent them re-executing.
@@ -133,6 +148,36 @@ class Annotator extends Delegator
       })
 
     @editor.element.appendTo(@wrapper)
+    this
+
+  _setupPresetSelector: ->
+    @presetSelector = new Annotator.Editor()
+    @presetSelector.hide()
+      .on('hide', this.onEditorHide)
+      .on('save', this.onEditorSubmit)
+      .addField({
+        type: 'select',
+        load: (field, annotation) =>
+          $select = $(field).find('select').empty()
+
+          for preset in @presets
+            $option = $('<option>').text(preset.label).val(preset.uuid)
+            $select.append($option)
+        submit: (field, annotation) =>
+          selectedUuid = $(field).find('select').val()
+
+          findPreset = =>
+            for preset in @presets
+              return preset if preset.uuid == selectedUuid
+
+          selectedPreset = findPreset()
+
+          annotation.text = selectedPreset.value
+          annotation.label = selectedPreset.label
+          annotation.isPreset = true
+      })
+
+    @presetSelector.element.appendTo(@wrapper)
     this
 
   # Sets up the selection event listeners to watch mouse actions on the document.
@@ -266,8 +311,7 @@ class Annotator extends Delegator
   #   annotator.createAnnotation() # Returns {myProperty: "This is a…"}
   #
   # Returns a newly created annotation Object.
-  createAnnotation: () ->
-    annotation = {}
+  createAnnotation: (annotation={}) ->
     this.publish('beforeAnnotationCreated', [annotation])
     annotation
 
@@ -309,10 +353,17 @@ class Annotator extends Delegator
     annotation.ranges     = []
     annotation.highlights = []
 
+    if annotation.isPreset
+      highlightClasses = 'annotator-hl annotator-hl-preset'
+    else
+      highlightClasses = 'annotator-hl'
+
     for normed in normedRanges
       annotation.quote.push      $.trim(normed.text())
       annotation.ranges.push     normed.serialize(@wrapper[0], '.annotator-hl')
-      $.merge annotation.highlights, this.highlightRange(normed)
+      $.merge annotation.highlights, this.highlightRange(normed, highlightClasses)
+
+    this.labelHighlight(annotation)
 
     # Join all the quotes into one string.
     annotation.quote = annotation.quote.join(' / ')
@@ -322,6 +373,12 @@ class Annotator extends Delegator
     $(annotation.highlights).attr('data-annotation-id', annotation.id)
 
     annotation
+
+  labelHighlight: (annotation) ->
+    if annotation.label
+      highlight = annotation.highlights[0]
+      $label = "<i class='annotator-hl-label'>#{annotation.label}</i>"
+      $(highlight).append($label)
 
   # Public: Publishes the 'beforeAnnotationUpdated' and 'annotationUpdated'
   # events. Listeners wishing to modify an updated annotation should subscribe
@@ -355,7 +412,7 @@ class Annotator extends Delegator
   deleteAnnotation: (annotation) ->
     if annotation.highlights?
       for h in annotation.highlights when h.parentNode?
-        child = h.childNodes[0]
+        $(h).find('.annotator-hl-label').remove()
         $(h).replaceWith(h.childNodes)
 
     this.publish('annotationDeleted', [annotation])
@@ -484,6 +541,12 @@ class Annotator extends Delegator
     @editor.element.css(location)
     @editor.load(annotation)
     this.publish('annotationEditorShown', [@editor, annotation])
+    this
+
+  showPresetSelector: (annotation, location) =>
+    @presetSelector.element.css(location)
+    @presetSelector.load(annotation)
+    this.publish('annotationEditorShown', [@presetSelector, annotation])
     this
 
   # Callback method called when the @editor fires the "hide" event. Itself
@@ -640,23 +703,13 @@ class Annotator extends Delegator
     event?.preventDefault()
     @ignoreMouseup = true
 
-  # Annotator#element callback. Displays the @editor in place of the @adder and
-  # loads in a newly created annotation Object. The click event is used as well
-  # as the mousedown so that we get the :active state on the @adder when clicked
-  #
-  # event - A mousedown Event object
-  #
-  # Returns nothing.
-  onAdderClick: (event) =>
-    event?.preventDefault()
-
+  _prepareAnnotationForCreate: (annotationOptions) ->
     # Hide the adder
-    position = @adder.position()
     @adder.hide()
 
     # Show a temporary highlight so the user can see what they selected
     # Also extract the quotation and serialize the ranges
-    annotation = this.setupAnnotation(this.createAnnotation())
+    annotation = this.setupAnnotation(this.createAnnotation(annotationOptions))
     $(annotation.highlights).addClass('annotator-hl-temporary')
 
     # Subscribe to the editor events
@@ -681,8 +734,30 @@ class Annotator extends Delegator
     this.subscribe('annotationEditorHidden', cancel)
     this.subscribe('annotationEditorSubmit', save)
 
-    # Display the editor.
+    annotation
+
+  # Annotator#element callback. Displays the @editor in place of the @adder and
+  # loads in a newly created annotation Object. The click event is used as well
+  # as the mousedown so that we get the :active state on the @adder when clicked
+  #
+  # event - A mousedown Event object
+  #
+  # Returns nothing.
+  onAdderCommentClick: (event) =>
+    event?.preventDefault()
+
+    position = @adder.position()
+    annotation = @_prepareAnnotationForCreate()
+
     this.showEditor(annotation, position)
+
+  onAdderPresetClick: (event) =>
+    event?.preventDefault()
+
+    position = @adder.position()
+    annotation = @_prepareAnnotationForCreate(isPreset: true)
+
+    this.showPresetSelector(annotation, position)
 
   # Annotator#viewer callback function. Displays the Annotator#editor in the
   # positions of the Annotator#viewer and loads the passed annotation for
