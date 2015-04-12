@@ -63,7 +63,7 @@ class Annotator extends Delegator
   constructor: (element, options={}) ->
     super
     @plugins = {}
-    @_setupPresets(options.presets || [])
+    @presets = @options.presets || []
 
     this.subscribe 'annotationCreated', this.labelHighlight
 
@@ -76,18 +76,18 @@ class Annotator extends Delegator
     # Create adder
     this.adder = $(this.html.adder).appendTo(@wrapper).hide()
 
+    if @options.adderPresetLabel
+      @adder.find('.annotator-adder-preset').text(@options.adderPresetLabel)
+
+    if @options.adderCommentLabel
+      @adder.find('.annotator-adder-comment').text(@options.adderCommentLabel)
+
     if @presets.length > 0
       this._setupPresetSelector()
     else
       this.adder.find('.annotator-adder-preset').remove()
 
     Annotator._instances.push(this)
-
-  _setupPresets: (presets) ->
-    for preset in presets
-      preset.uuid = "preset-#{Annotator.Util.uuid()}"
-
-    @presets = presets
 
   # Wraps the children of @element in a @wrapper div. NOTE: This method will also
   # remove any script elements inside @element to prevent them re-executing.
@@ -156,28 +156,34 @@ class Annotator extends Delegator
       .on('hide', this.onEditorHide)
       .on('save', this.onEditorSubmit)
       .addField({
-        type: 'select',
+        type: null,
         load: (field, annotation) =>
-          $select = $(field).find('select').empty()
+          $el = $(field).empty().addClass('annotator-item-presets-list')
 
           for preset in @presets
-            $option = $('<option>').text(preset.label).val(preset.uuid)
-            $select.append($option)
+            $button = $('<a>').text(preset.label)
+              .addClass('annotator-item-select-preset')
+
+            do (preset) =>
+              $button.click (event) =>
+                event.preventDefault()
+                field.selectedPreset = preset
+                @presetSelector.submit()
+
+            $el.append($button)
         submit: (field, annotation) =>
-          selectedUuid = $(field).find('select').val()
-
-          findPreset = =>
-            for preset in @presets
-              return preset if preset.uuid == selectedUuid
-
-          selectedPreset = findPreset()
+          selectedPreset = field.selectedPreset
 
           annotation.text = selectedPreset.value
           annotation.label = selectedPreset.label
           annotation.isPreset = true
       })
 
+    @presetSelector.element.find('.annotator-save').remove()
     @presetSelector.element.appendTo(@wrapper)
+
+    @presetSelector.element.addClass('annotator-preset-selector')
+
     this
 
   # Sets up the selection event listeners to watch mouse actions on the document.
@@ -639,9 +645,14 @@ class Annotator extends Delegator
       return if this.isAnnotator(container)
 
     if event and @selectedRanges.length
-      @adder
-        .css(Util.mousePosition(event, @wrapper[0]))
-        .show()
+      position = Util.mousePosition(event, @wrapper[0])
+
+      position.left -= @adder.width() / 2
+      position.left = 0 if position.left < 0
+
+      console.log('displaying adder at', position)
+
+      @adder.css(position).show()
     else
       @adder.hide()
 
@@ -736,6 +747,11 @@ class Annotator extends Delegator
 
     annotation
 
+  _positionForEditor: ->
+    position = @adder.position()
+    position.left += @adder.width() / 2
+    return position
+
   # Annotator#element callback. Displays the @editor in place of the @adder and
   # loads in a newly created annotation Object. The click event is used as well
   # as the mousedown so that we get the :active state on the @adder when clicked
@@ -746,16 +762,20 @@ class Annotator extends Delegator
   onAdderCommentClick: (event) =>
     event?.preventDefault()
 
-    position = @adder.position()
+    position = @_positionForEditor()
     annotation = @_prepareAnnotationForCreate()
+
+    console.log('Showing at', position)
 
     this.showEditor(annotation, position)
 
   onAdderPresetClick: (event) =>
     event?.preventDefault()
 
-    position = @adder.position()
+    position = @_positionForEditor()
     annotation = @_prepareAnnotationForCreate(isPreset: true)
+
+    console.log('Showing at', position)
 
     this.showPresetSelector(annotation, position)
 

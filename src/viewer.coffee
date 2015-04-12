@@ -154,6 +154,9 @@ class Annotator.Viewer extends Annotator.Widget
           hideDelete: -> del.attr('disabled', 'disabled')
         }
 
+      if annotation.isPreset == true
+        edit.remove()
+
       for field in @fields
         element = $(field.element).clone().appendTo(item)[0]
         field.load(element, annotation, controller)
