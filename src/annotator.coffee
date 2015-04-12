@@ -191,8 +191,10 @@ class Annotator extends Delegator
   # Returns itself for chaining.
   _setupDocumentEvents: ->
     $(document).bind({
-      "mouseup":   this.checkForEndSelection
       "mousedown": this.checkForStartSelection
+      "mouseup":   this.checkForEndSelection
+      "touchstart": this.checkForStartSelection
+      "touchend": this.checkForEndSelection
     })
     this
 
@@ -649,6 +651,8 @@ class Annotator extends Delegator
 
       position.left -= @adder.width() / 2
       position.left = 0 if position.left < 0
+
+      position.top += 300
 
       @adder.css(position).show()
     else

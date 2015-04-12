@@ -81,7 +81,7 @@ Util.getLastTextNodeUpTo = (n) ->
       # This is an element, we need to dig in
       if n.lastChild? # Does it have children at all?
         result = Util.getLastTextNodeUpTo n.lastChild
-        if result? then return result        
+        if result? then return result
     else
       # Not a text node, and not an element node.
   # Could not find a text node in current node, go backwards
@@ -166,9 +166,24 @@ Util.mousePosition = (e, offsetEl) ->
   unless $(offsetEl).css('position') in ['absolute', 'fixed', 'relative']
     offsetEl = $(offsetEl).offsetParent()[0]
   offset = $(offsetEl).offset()
+
+  # Touch support
+  console.log(e)
+  if e.originalEvent.changedTouches
+    console.log('touches', e.originalEvent.changedTouches)
+    window.changedTouches = e.originalEvent.changedTouches
+    touch = e.originalEvent.changedTouches[0]
+    pageY = touch.pageY
+    pageX = touch.pageX
+    console.log('Is touch device', pageY, pageX)
+  else
+    pageY = e.pageY
+    pageX = e.pageX
+    console.log('Is not', pageY, pageX)
+
   {
-    top:  e.pageY - offset.top,
-    left: e.pageX - offset.left
+    top:  pageY - offset.top,
+    left: pageX - offset.left
   }
 
 # Checks to see if an event parameter is provided and contains the prevent

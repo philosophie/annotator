@@ -93,20 +93,111 @@
       </table>
     </div>
 
+    <style>
+      body {
+        line-height: 2.2em;
+      }
+    </style>
+
     <script>
       var devAnnotator
       (function ($) {
         var elem = document.getElementById('airlock');
         var options = {
+          adderPresetLabel: 'Grading Symbols',
           presets: [
             {
-              label: 'Preset 1',
-              value: 'The value of preset 1'
+              label: 'Spelling',
+              value: 'What might be some other ways you can spell this?'
             },
             {
-              label: 'Another preset',
-              value: 'The value of preset 2'
+              label: 'Capitalization',
+              value: 'Why should you capitalize this word?'
             },
+            {
+              label: 'Punctuation',
+              value: 'How might you punctuate to make your meaning clearer for your reader?'
+            },
+            {
+              label: 'Run-on',
+              value: 'How might you 1) create two complete sentences or 2) combine your main ideas?'
+            },
+            {
+              label: 'Fragment',
+              value: 'How might you turn this into a independent clause?'
+            },
+            {
+              label: 'Comma error',
+              value: 'What was your thinking behind your decision to use/not use a common here?'
+            },
+            {
+              label: 'Subject and verb do not agree',
+              value: 'How might you make your subject and verb agree in number (plural or singular)'
+            },
+            {
+              label: 'Passive voice',
+              value: 'How might you make the subject of your sentence perform the action?'
+            },
+            {
+              label: 'Awkward',
+              value: 'What might be another way you can rephrase this?'
+            },
+            {
+              label: 'Vague',
+              value: 'What might you add to this to provide more clarity?'
+            },
+            {
+              label: 'Missing word',
+              value: 'What word might you add to complete your thought?'
+            },
+            {
+              label: 'Repetitive',
+              value: 'What is your thinking behind the desicion to repeat this information?'
+            },
+            {
+              label: 'Needs an introduction',
+              value: 'How might you talk philosophically about your topic?'
+            },
+            {
+              label: 'Needs a thesis or claim',
+              value: 'What will you prove or explain in this essay?'
+            },
+            {
+              label: 'Needs topic sentence',
+              value: 'How might you let your reader know what you\'ll prove in this paragraph?'
+            },
+            {
+              label: 'Needs lead-in',
+              value: 'How might you build context for your evidence or concrete detail?'
+            },
+            {
+              label: 'Needs transition',
+              value: 'How might you let your reader know you\'re moving from one idea to another?'
+            },
+            {
+              label: 'Needs more evidence',
+              value: 'What might be some other evidence to support your claim?'
+            },
+            {
+              label: 'Needs more commentary/analysis',
+              value: 'In what ways does your evidence support your thesis/claim/topic sentence?'
+            },
+            {
+              label: 'Citation needed',
+              value: 'How might you show your reader where you found your evidence or concrete detail?'
+            },
+            {
+              label: 'Improper citation',
+              value: 'How might you change this citation to make it clearer for your reader?'
+            },
+            {
+              label: 'Concluding sentence',
+              value: 'How might you show your reader that you are finished with this paragraph?'
+            },
+            {
+              label: 'Needs stronger assertion',
+              value: 'In your final paragraphs, say more about the importance of your topic.'
+            }
           ]
         };
 
