@@ -650,8 +650,6 @@ class Annotator extends Delegator
       position.left -= @adder.width() / 2
       position.left = 0 if position.left < 0
 
-      console.log('displaying adder at', position)
-
       @adder.css(position).show()
     else
       @adder.hide()
@@ -765,8 +763,6 @@ class Annotator extends Delegator
     position = @_positionForEditor()
     annotation = @_prepareAnnotationForCreate()
 
-    console.log('Showing at', position)
-
     this.showEditor(annotation, position)
 
   onAdderPresetClick: (event) =>
@@ -774,8 +770,6 @@ class Annotator extends Delegator
 
     position = @_positionForEditor()
     annotation = @_prepareAnnotationForCreate(isPreset: true)
-
-    console.log('Showing at', position)
 
     this.showPresetSelector(annotation, position)
 
